@@ -12,17 +12,36 @@ from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
 def _createLogbookTable():
     """Create the contacts table in the database."""
+    
     createTableQuery = QSqlQuery()
-    return createTableQuery.exec(
+    createTableQuery.prepare(
         """
-        CREATE TABLE IF NOT EXISTS logbook (
-            id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-            name VARCHAR(40) NOT NULL,
-            job VARCHAR(50),
-            email VARCHAR(40) NOT NULL
+        CREATE TABLE IF NOT EXISTS logbook(
+            Id INT PRIMARY KEY,
+            Date TEXT,
+            Aircraft_ident TEXT,
+            Depart TEXT,
+            Destination TEXT,
+            Remarks TEXT,
+            Num_instr_app INT,
+            Num_ldg INT,
+            Airplane_Sel FLOAT,
+            Airplane_Mel FLOAT,
+            cross_country FLOAT,
+            Day FLOAT,
+            Night FLOAT,
+            Act_Instr FLOAT,
+            Sim_Instr FLOAT,
+            Ground_train FLOAT,
+            Dual_recd FLOAT,
+            PIC FLOAT,
+            Total_flight_time FLOAT
+           ) 
+        """
         )
-        """
-    )
+    
+    return createTableQuery.exec_()
+
 
 def createConnection(databaseName):
     """Create and open a database connection"""
@@ -37,5 +56,11 @@ def createConnection(databaseName):
             )
         return False
     
+    _createLogbookTable()
     return True
+
+
+    
+
+    
 
