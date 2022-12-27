@@ -17,7 +17,7 @@ def _createLogbookTable():
     createTableQuery.prepare(
         """
         CREATE TABLE IF NOT EXISTS logbook(
-            Id INT PRIMARY KEY,
+            ID INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
             Date TEXT,
             Aircraft_ident TEXT,
             Depart TEXT,
@@ -27,7 +27,7 @@ def _createLogbookTable():
             Num_ldg INT,
             Airplane_Sel FLOAT,
             Airplane_Mel FLOAT,
-            cross_country FLOAT,
+            Cross_country FLOAT,
             Day FLOAT,
             Night FLOAT,
             Act_Instr FLOAT,

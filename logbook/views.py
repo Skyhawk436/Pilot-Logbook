@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QMainWindow,
     QMessageBox,
@@ -22,7 +23,8 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
     )
-from .model import LogbookModel    
+from .model import LogbookModel  
+from PyQt5.QtSql import QSqlQuery  
 
 class Window(QMainWindow):
     """Main Window"""
@@ -49,17 +51,63 @@ class Window(QMainWindow):
         self.table.resizeColumnsToContents()
         # Create buttons
         self.addButton = QPushButton("Add...")
+        self.addButton.clicked.connect(self.openAddDialog)
         self.deleteButton = QPushButton("Delete")
+        self.deleteButton.clicked.connect(self.deleteFlight)
         self.clearAllButton = QPushButton("Clear All")
+        self.clearAllButton.clicked.connect(self.clearLogbook)
+        #display total flight hours
+        self.totalHours = QLabel()
+        self.totalHours.setText(f"Total Flight Hours: {getHours()}")
+        
+        
         # Lay out the GUI
         layout = QVBoxLayout()
         layout.addWidget(self.addButton)
         layout.addWidget(self.deleteButton)
+        layout.addWidget(self.totalHours)
         layout.addStretch()
         layout.addWidget(self.clearAllButton)
         self.layout.addWidget(self.table)
         self.layout.addLayout(layout)
+        
+    def openAddDialog(self):
+        """Open the Add Flight dialog."""
+        dialog = AddDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            self.logbookModel.addFlight(dialog.data)
+            self.table.resizeColumnsToContents()
+            
+    def deleteFlight(self):
+        """Delete the selected entry from the database."""
+        row = self.table.currentIndex().row()
+        if row < 0:
+            return
 
+        messageBox = QMessageBox.warning(
+            self,
+            "Warning!",
+            "Do you want to remove the selected flight?",
+            QMessageBox.Ok | QMessageBox.Cancel,
+        )
+
+        if messageBox == QMessageBox.Ok:
+            self.logbookModel.deleteFlight(row)
+            
+    def clearLogbook(self):
+        """Remove all entries from the database."""
+        messageBox = QMessageBox.warning(
+            self,
+            "Warning!",
+            "Do you want to remove all your flights?",
+            QMessageBox.Ok | QMessageBox.Cancel,
+        )
+
+        if messageBox == QMessageBox.Ok:
+            self.logbookModel.clearLogbook()
+            
+    
+            
 class AddDialog(QDialog):
     """Add Flight dialog."""
     def __init__(self, parent=None):
@@ -115,11 +163,21 @@ class AddDialog(QDialog):
         layout.addRow("Date:", self.dateField)
         layout.addRow("Aircraft_ident:", self.identField)
         layout.addRow("Depart:", self.depField)
-        layout.addRow("Depart:", self.depField)
-        layout.addRow("Depart:", self.depField)
-        layout.addRow("Depart:", self.depField)
-        layout.addRow("Depart:", self.depField)
-        layout.addRow("Depart:", self.depField)
+        layout.addRow("Destination:", self.destField)
+        layout.addRow("Remarks:", self.remarksField)
+        layout.addRow("Num_ins_app:", self.numinstField)
+        layout.addRow("Num_landings:", self.numldgField)
+        layout.addRow("Airplane_SEL:", self.selField)
+        layout.addRow("Airplane_MEL:", self.melField)
+        layout.addRow("Cross_country:", self.ccField)
+        layout.addRow("Day:", self.dayField)
+        layout.addRow("Night:", self.nightField)
+        layout.addRow("Actual_instr:", self.actinstField)
+        layout.addRow("Sim_instr:", self.siminstField)
+        layout.addRow("Ground:", self.groundField)
+        layout.addRow("Dual:", self.dualField)
+        layout.addRow("PIC:", self.picField)
+        layout.addRow("Total_flight_time:", self.totalField)
         self.layout.addLayout(layout)
         # Add standard buttons to the dialog and connect them
         self.buttonsBox = QDialogButtonBox(self)
@@ -130,3 +188,45 @@ class AddDialog(QDialog):
         self.buttonsBox.accepted.connect(self.accept)
         self.buttonsBox.rejected.connect(self.reject)
         self.layout.addWidget(self.buttonsBox)
+        
+    def accept(self):
+        """Accept the data provided through the dialog."""
+        self.data = []
+        for field in (self.dateField, self.identField, self.depField, self.destField,
+                      self.remarksField, self.numinstField, self.numldgField, self.selField,
+                      self.melField, self.ccField, self.dayField, self.nightField,
+                      self.actinstField, self.siminstField, self.groundField, self.dualField,
+                      self.picField, self.totalField):
+            
+            self.data.append(field.text())
+            
+        for field in (self.dateField, self.identField, self.totalField):
+            if not field.text():
+                QMessageBox.critical(
+                    self,
+                    "Error!",
+                    f"You must provide input for {field.objectName()}",
+                )
+                self.data = None  # Reset .data
+                return
+
+                
+
+        if not self.data:
+            return
+
+        super().accept()
+        
+
+def getHours():
+    """Gets sum of flight hours from database to display on main window"""
+    quer = QSqlQuery()
+    quer.exec(
+            """
+            SELECT Sum(Total_flight_time)
+            FROM logbook
+            """
+            )
+    quer.first()
+    return quer.value(0)
+    
